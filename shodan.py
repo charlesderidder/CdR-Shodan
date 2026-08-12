@@ -3,9 +3,10 @@
 """
 Shodan GUI - Volwaardige Shodan Client voor Windows 11 / 2026
 ==============================================================
-Versie: 1.1.0 - Windows 2026 Fluent Edition
+Versie: 1.2.0 - Windows 2026 Fluent Edition
 
-Fixes & Features v1.1:
+Fixes & Features v1.2:
+- FIX: Async error handling in GUI callbacks gefixt, zodat query/API fouten altijd zichtbaar worden i.p.v. stil falen.
 - FIX: Tabbladen worden niet meer kleiner bij selecteren (uniforme padding + Windows 11 style)
 - FIX: API key dialoog knoppen volledig leesbaar (grotere dialoog, correcte layout, DPI-proof)
 - FIX: Preset "Webcams" gefixed: port:554,80,8080 + product:"webcam" gaf 0 resultaten of error → nu has_screenshot:true + webcam (losse filters)
@@ -874,10 +875,10 @@ class ShodanGUI(Tk):
                 tb=traceback.format_exc()
                 LOGGER.log("ERROR", str(e), tb.splitlines()[-1] if tb else "")
                 if on_error:
-                    self.after(0, lambda: on_error(e))
+                    self.after(0, lambda err=e: on_error(err))
                 else:
-                    self.after(0, lambda: messagebox.showerror("Fout", str(e)))
-                    self.after(0, lambda: self.set_status(f"Fout: {e}"))
+                    self.after(0, lambda err=e: messagebox.showerror("Fout", str(err)))
+                    self.after(0, lambda err=e: self.set_status(f"Fout: {err}"))
         threading.Thread(target=wrapper, daemon=True).start()
 
     def do_search(self):
@@ -1632,7 +1633,7 @@ class ShodanGUI(Tk):
         # Attach logger
         LOGGER.attach(self.log_text)
         LOGGER.log("INFO","Logging gestart","Developer modus: %s" % ("AAN" if self.developer_mode else "UIT"))
-        LOGGER.log("INFO","App versie 1.1.0 Windows 2026", "Alle 37 endpoints geladen")
+        LOGGER.log("INFO","App versie 1.2.0 Windows 2026", "Alle 37 endpoints geladen")
         if not self.api:
             LOGGER.log("WARN","Geen API key geconfigureerd","Ga naar Instellingen → API Key beheren")
 
@@ -1778,7 +1779,7 @@ class ShodanGUI(Tk):
         path=filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON","*.json")], initialfile="shodan_debug_info.json")
         if not path: return
         info={
-            "app":"Shodan GUI 1.1.0 Windows 2026",
+            "app":"Shodan GUI 1.2.0 Windows 2026",
             "config": self.app_config._cache,
             "credits": self.credits_label.cget("text"),
             "logs": LOGGER.entries[-50:],
@@ -1793,7 +1794,7 @@ class ShodanGUI(Tk):
 
     def show_diagnostics(self):
         # Troubleshooting popup
-        diag=f"App: Shodan GUI 1.1.0\nPython: {sys.version.split()[0]}\nPlatform: {sys.platform}\nDeveloper: {'AAN' if self.developer_mode else 'UIT'}\nAPI key: {'aanwezig' if self.app_config.get('api_key') else 'geen'}\nLogs: {len(LOGGER.entries)} entries\n\nProbeer:\n• Instellingen → Test API\n• Logging tab → bekijk laatste errors\n• Help → Developer Docs"
+        diag=f"App: Shodan GUI 1.2.0\nPython: {sys.version.split()[0]}\nPlatform: {sys.platform}\nDeveloper: {'AAN' if self.developer_mode else 'UIT'}\nAPI key: {'aanwezig' if self.app_config.get('api_key') else 'geen'}\nLogs: {len(LOGGER.entries)} entries\n\nProbeer:\n• Instellingen → Test API\n• Logging tab → bekijk laatste errors\n• Help → Developer Docs"
         messagebox.showinfo("Diagnose & Troubleshooting", diag)
         LOGGER.log("INFO","Diagnose geopend")
 
@@ -1857,7 +1858,7 @@ class ShodanGUI(Tk):
 
     def show_about(self):
         messagebox.showinfo("Over Shodan GUI", 
-            "Shodan GUI — Windows 2026 Edition v1.1.0\n\n"
+            "Shodan GUI — Windows 2026 Edition v1.2.0\n\n"
             "• Alle 37 Shodan REST API endpoints\n"
             "• Visuele query builder — geen syntax nodig (nu gefixed voor country:NL + webcam)\n"
             "• Presets: webcams, ICS/SCADA, databases…\n"
